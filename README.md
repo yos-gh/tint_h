@@ -1,16 +1,16 @@
 # TINT horizontal
 
-横長のフィールドで、柔らかいテトロミノを細く高く積み上げる物理パズルのプロトタイプです。
+A physics-based falling-block puzzle prototype about stacking soft tetrominoes vertically in a wide field while keeping the pile near the center.
 
-[ブラウザでTINT horizontalをプレイ](https://yos-gh.github.io/tint_h/)
+[Play TINT horizontal in your browser](https://yos-gh.github.io/tint_h/)
 
 ## Prototype rules
 
-- 石が緑の消去ラインから底まで縦につながると、その列を消去します。
-- 消去に必要な高さは約9石分で、その上に操作用の余白があります。
-- 左右の赤いデッドラインを石が5秒間越え続けるとゲームオーバーです。
-- 1秒以内に列を続けて消すとコンボ倍率が上がります。同時に複数列を消した場合も列数分だけ倍率が上がります。
-- フィールド寸法、デッドライン位置、得点値はプロトタイプ用の仮値です。
+- A column clears when stones form a continuous vertical path from the green clear line to the curved floor.
+- The required height is approximately nine stones, with extra space above it for controlling incoming pieces.
+- The game ends when stones remain beyond either red deadline for five continuous seconds.
+- Clearing another column within one second increases the chain multiplier. Clearing multiple columns together increases it by the number of columns cleared.
+- Field dimensions, deadline positions, and scoring values are provisional prototype settings.
 
 ## Controls
 
@@ -22,16 +22,20 @@
 | Rotate clockwise | `M` | `B` or `Y` |
 | Restart | `R` | — |
 
-Godot 4.7以降で `project.godot` を開くか、次のコマンドで起動できます。
+## Run locally
+
+TINT horizontal requires Godot 4.7 or later. Open `project.godot` in Godot or run:
 
 ```powershell
 Godot.exe --path .
 ```
 
-Web版は次のコマンドで `web/game` へ出力できます。
+## Build for the Web
+
+Install the official export templates matching your Godot version, then export the game to `web/game`:
 
 ```powershell
 Godot_console.exe --headless --path . --export-release Web web/game/index.html
 ```
 
-前作TINTのブロック物理、中央へ寄る凹型の底面、操作、タッチUIを流用しています。
+The prototype reuses the soft-block physics, curved bowl, controls, and touchscreen interface from the original [TINT](https://github.com/yos-gh/tint).
