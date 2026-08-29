@@ -1,0 +1,6 @@
+.godot/
+*.log
+docs/draft.md
+web/game/*.import
+prototype-preview.png
+prototype-preview.png.import

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09101e">
+  <meta name="description" content="Play TINT horizontal, a physics-driven falling-block puzzle about keeping elastic stones inside two deadlines.">
+  <title>TINT horizontal</title>
+  <style>
+    :root { color-scheme: dark; --bg: #09101e; --surface: #101a2c; --line: #293956; --text: #e8efff; --muted: #91a0c5; --accent: #55d6be; --gold: #ffd166; }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body { margin: 0; color: var(--text); background: radial-gradient(circle at 50% 8%, #172543 0, transparent 38rem), var(--bg); font-family: Inter, "Segoe UI", "Yu Gothic UI", sans-serif; line-height: 1.65; }
+    a { color: var(--accent); }
+    .topbar { min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px max(18px, calc((100vw - 1180px) / 2)); border-bottom: 1px solid var(--line); background: rgb(9 16 30 / 82%); }
+    .brand { display: flex; align-items: baseline; gap: 12px; }
+    .brand h1 { margin: 0; font-size: 1.05rem; letter-spacing: .2em; }
+    .brand span { color: var(--muted); font-size: .76rem; }
+    .topbar nav { font-size: .82rem; }
+    .game-wrap { width: min(calc(100% - 32px), 1120px); margin: 0 auto; padding: 20px 0 28px; }
+    .game-shell { width: 100%; aspect-ratio: 64 / 45; overflow: hidden; border: 1px solid #35496d; border-radius: 14px; background: #090c13; box-shadow: 0 24px 80px rgb(0 0 0 / 44%); }
+    .game-frame { display: block; width: 100%; height: 100%; border: 0; }
+    main { border-top: 1px solid var(--line); background: rgb(9 16 30 / 74%); }
+    .content { width: min(calc(100% - 36px), 920px); margin: 0 auto; padding: 38px 0 58px; }
+    .intro { max-width: 760px; margin: 0 0 34px; color: var(--muted); }
+    .sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 42px; }
+    section { padding: 22px 0; border-top: 1px solid var(--line); }
+    section h2 { margin: 0 0 12px; color: var(--accent); font-size: .9rem; }
+    section p, section ul { margin: 0; color: var(--muted); font-size: .9rem; }
+    section ul { padding-left: 1.2rem; }
+    code { color: var(--gold); font-family: "Cascadia Mono", Consolas, monospace; }
+    footer { padding: 21px 18px 32px; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; text-align: center; }
+    @media (max-width: 680px) { .topbar { align-items: flex-start; flex-direction: column; gap: 3px; } .brand span { display: none; } .game-wrap { width: 100%; padding-top: 0; } .game-shell { border-left: 0; border-right: 0; border-radius: 0; } .sections { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><h1>TINT HORIZONTAL</h1><span>keep it centered</span></div>
+    <nav aria-label="Project links"><a href="https://github.com/yos-gh/tint_h">Source</a></nav>
+  </header>
+  <div class="game-wrap"><div class="game-shell"><iframe class="game-frame" src="game/index.html" title="TINT horizontal game" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe></div></div>
+  <main><div class="content">
+    <p class="intro">TINT horizontal is a physics-driven falling-block puzzle. Keep soft, connected stones near the center of a curved bowl, build vertical columns, and clear them before the pile crosses either deadline.</p>
+    <div class="sections">
+      <section><h2>Controls</h2><ul><li>Move: <code>A / D</code> or arrow keys</li><li>Soft drop: <code>S</code> or down arrow</li><li>Rotate: <code>N / M</code></li><li>Restart: <code>R</code></li><li>Gamepad and touchscreen supported</li></ul></section>
+      <section><h2>Clear Rule</h2><p>Build a continuous vertical column from the green line to the curved floor. Slightly winding columns still count.</p></section>
+      <section><h2>Deadlines</h2><p>Stones may cross a red deadline briefly. Keep the pile beyond either line for five continuous seconds and the game ends.</p></section>
+      <section><h2>Scoring</h2><p>Clear multiple columns together—or within one second—to increase the chain multiplier.</p></section>
+    </div>
+  </div></main>
+  <footer>TINT horizontal — browser prototype</footer>
+</body>
+</html>
