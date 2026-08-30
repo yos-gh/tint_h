@@ -24,7 +24,7 @@ const PAIR_HEIGHT_TOLERANCE := STONE_SIZE * 0.55
 const CLEAR_BAND_HALF_WIDTH := STONE_SIZE * 0.55
 
 const HORIZONTAL_MOVE_SPEED := 240.0
-const SOFT_DROP_EXTRA_SPEED := 300.0
+const SOFT_DROP_FORCE := 2800.0
 const TARGET_ROTATION_SPEED := TAU # One full turn per second.
 const GAMEPAD_DEADZONE := 0.28
 const INPUT_MOVE_LEFT := "gamepad_move_left"
@@ -91,8 +91,6 @@ var elimination_cooldown := 0.0
 var near_clear_cooldown := 0.0
 var combo_count := 0
 var combo_time_remaining := 0.0
-var soft_drop_active := false
-var soft_drop_natural_velocity := 0.0
 var flash_lines: Array[Dictionary] = []
 
 var score_label: Label
@@ -458,7 +456,6 @@ func _physics_process(delta: float) -> void:
 
 func _control_active_piece(delta: float) -> void:
 	if active_stones.is_empty():
-		_reset_translation_control()
 		return
 	var horizontal := Input.get_axis(INPUT_MOVE_LEFT, INPUT_MOVE_RIGHT)
 	if is_instance_valid(touch_stick):
@@ -537,55 +534,28 @@ func _control_active_piece(delta: float) -> void:
 					stone.linear_velocity.y -= average_vertical_velocity
 
 
-func _apply_translation_control(horizontal: float, drop_strength: float, delta: float) -> void:
+func _apply_translation_control(horizontal: float, drop_strength: float, _delta: float) -> void:
 	var valid_stones: Array[Node] = active_stones.filter(
 		func(stone): return is_instance_valid(stone) and not stone.is_queued_for_deletion()
 	)
 	if valid_stones.is_empty():
-		_reset_translation_control()
 		return
 
-	# Control the piece's center-of-mass velocity, preserving the relative
-	# velocities used by rotation and soft-body deformation.
-	var average_velocity := Vector2.ZERO
+	# Horizontal movement directly controls center-of-mass speed and stops on
+	# release. Soft drop retains the original force-based physics so collisions
+	# can resolve naturally instead of fighting a vertical velocity target.
+	var average_horizontal_velocity := 0.0
 	for stone in valid_stones:
-		average_velocity += stone.linear_velocity
-	average_velocity /= float(valid_stones.size())
+		average_horizontal_velocity += stone.linear_velocity.x
+	average_horizontal_velocity /= float(valid_stones.size())
 
 	var target_horizontal_velocity := horizontal * HORIZONTAL_MOVE_SPEED
-	var horizontal_correction := target_horizontal_velocity - average_velocity.x
-	var vertical_correction := 0.0
-	if drop_strength > 0.0:
-		var supported: bool = valid_stones.any(func(stone): return stone.is_supported)
-		if supported:
-			# A held soft drop must stop being a drive force once the piece lands.
-			# Otherwise the remembered free-fall velocity keeps growing while the
-			# pile holds the piece still and keeps crushing the pile. Reset only the
-			# input state: the physics solver's natural rebound must remain intact.
-			soft_drop_natural_velocity = 0.0
-			soft_drop_active = false
-		elif not soft_drop_active:
-			soft_drop_natural_velocity = average_velocity.y
-			soft_drop_active = true
-		else:
-			var gravity := float(ProjectSettings.get_setting("physics/2d/default_gravity"))
-			# Collisions may slow the piece before the support flag becomes visible
-			# here. Never let the hidden natural-velocity baseline outrun the
-			# velocity the physics solver actually produced.
-			soft_drop_natural_velocity = minf(
-				soft_drop_natural_velocity + gravity * delta, average_velocity.y
-			)
-		if not supported:
-			var target_vertical_velocity := (
-				soft_drop_natural_velocity + SOFT_DROP_EXTRA_SPEED * drop_strength
-			)
-			vertical_correction = target_vertical_velocity - average_velocity.y
-	elif soft_drop_active:
-		vertical_correction = soft_drop_natural_velocity - average_velocity.y
-		soft_drop_active = false
+	var horizontal_correction := target_horizontal_velocity - average_horizontal_velocity
 
 	for stone in valid_stones:
-		stone.linear_velocity += Vector2(horizontal_correction, vertical_correction)
+		stone.linear_velocity.x += horizontal_correction
+		if drop_strength > 0.0:
+			stone.apply_central_force(Vector2(0.0, SOFT_DROP_FORCE * drop_strength))
 
 
 func _average_active_velocity() -> Vector2:
@@ -596,11 +566,6 @@ func _average_active_velocity() -> Vector2:
 	for stone in valid_stones:
 		average_velocity += stone.linear_velocity
 	return average_velocity / maxf(float(valid_stones.size()), 1.0)
-
-
-func _reset_translation_control() -> void:
-	soft_drop_active = false
-	soft_drop_natural_velocity = 0.0
 
 
 func _shape_error(group: Dictionary) -> float:
@@ -663,7 +628,6 @@ func _update_active_piece(delta: float) -> void:
 	if settle_age >= LOCK_DELAY:
 		active_group_id = -1
 		active_stones.clear()
-		_reset_translation_control()
 		settle_age = 0.0
 		_check_for_elimination()
 		if not is_game_over:
@@ -673,7 +637,6 @@ func _update_active_piece(delta: float) -> void:
 func _spawn_piece(shape_override: String = "") -> void:
 	if is_game_over:
 		return
-	_reset_translation_control()
 	group_counter += 1
 	active_group_id = group_counter
 	active_age = 0.0

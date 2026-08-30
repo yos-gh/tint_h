@@ -36,7 +36,8 @@ func _run() -> void:
 		))
 	)
 	for stone in game.active_stones:
-		stone.linear_velocity = Vector2(70.0, 80.0)
+		stone.gravity_scale = 0.0
+		stone.linear_velocity = Vector2(70.0, 0.0)
 	game._apply_translation_control(1.0, 0.0, 0.0)
 	var move_held_ok: bool = is_equal_approx(
 		game._average_active_velocity().x, game.HORIZONTAL_MOVE_SPEED
@@ -44,29 +45,17 @@ func _run() -> void:
 	game._apply_translation_control(0.0, 0.0, 0.0)
 	var move_release_ok: bool = is_zero_approx(game._average_active_velocity().x)
 	game._apply_translation_control(0.0, 1.0, 0.0)
-	var drop_held_ok: bool = is_equal_approx(
-		game._average_active_velocity().y, 80.0 + game.SOFT_DROP_EXTRA_SPEED
-	)
+	await physics_frame
+	await physics_frame
+	var forced_drop_velocity: float = game._average_active_velocity().y
+	var drop_held_ok: bool = forced_drop_velocity > 0.0
 	game._apply_translation_control(0.0, 0.0, 0.0)
-	var drop_release_ok: bool = is_equal_approx(game._average_active_velocity().y, 80.0)
-	for stone in game.active_stones:
-		stone.is_supported = true
-		stone.linear_velocity.y = 0.0
-	for _iteration in range(120):
-		game._apply_translation_control(0.0, 1.0, 1.0 / 60.0)
-	var supported_drop_ok: bool = (
-		is_zero_approx(game._average_active_velocity().y)
-		and is_zero_approx(game.soft_drop_natural_velocity)
-	)
-	for stone in game.active_stones:
-		stone.linear_velocity.y = -180.0
-	game._apply_translation_control(0.0, 1.0, 1.0 / 60.0)
-	var supported_bounce_ok: bool = is_equal_approx(game._average_active_velocity().y, -180.0)
-	game._apply_translation_control(0.0, 0.0, 1.0 / 60.0)
-	var released_bounce_ok: bool = is_equal_approx(game._average_active_velocity().y, -180.0)
+	await physics_frame
+	var released_drop_velocity: float = game._average_active_velocity().y
+	var drop_release_ok: bool = released_drop_velocity > 0.0
 	var direct_control_ok: bool = (
 		move_held_ok and move_release_ok and drop_held_ok and drop_release_ok
-		and supported_drop_ok and supported_bounce_ok and released_bounce_ok
+		and is_equal_approx(game.SOFT_DROP_FORCE, 2800.0)
 	)
 	for stone in game.active_stones.duplicate():
 		game._remove_stone_and_links(stone)
@@ -114,12 +103,12 @@ func _run() -> void:
 	var game_over_ok: bool = game.is_game_over
 
 	if centered_ok and field_height_ok and clear_height_ok and bowl_ok and tolerance_ok and gravity_ok and spawn_ok and direct_control_ok and columns_ok and score_ok and combo_expiry_ok and left_boundary_ok and right_boundary_ok and deadline_glow_ok and grace_reset_ok and grace_safe_ok and game_over_ok:
-		print("PASS: direct movement, soft-drop release, deadline glow, clears, and grace work")
+		print("PASS: direct horizontal movement, force-based soft drop, deadline glow, clears, and grace work")
 		quit(0)
 	else:
 		push_error(
-			"FAIL: centered=%s height=%s clear_height=%s bowl=%s tolerance=%s gravity=%s spawn=%s direct_control=%s columns=%s score=%s combo=%s left=%s right=%s glow=%s reset=%s safe=%s game_over=%s"
-			% [centered_ok, field_height_ok, clear_height_ok, bowl_ok, tolerance_ok, gravity_ok, spawn_ok, direct_control_ok, columns_ok, score_ok, combo_expiry_ok, left_boundary_ok, right_boundary_ok, deadline_glow_ok, grace_reset_ok, grace_safe_ok, game_over_ok]
+			"FAIL: centered=%s height=%s clear_height=%s bowl=%s tolerance=%s gravity=%s spawn=%s direct_control=%s move_held=%s move_release=%s drop_held=%s drop_release=%s forced_velocity=%s released_velocity=%s columns=%s score=%s combo=%s left=%s right=%s glow=%s reset=%s safe=%s game_over=%s"
+			% [centered_ok, field_height_ok, clear_height_ok, bowl_ok, tolerance_ok, gravity_ok, spawn_ok, direct_control_ok, move_held_ok, move_release_ok, drop_held_ok, drop_release_ok, forced_drop_velocity, released_drop_velocity, columns_ok, score_ok, combo_expiry_ok, left_boundary_ok, right_boundary_ok, deadline_glow_ok, grace_reset_ok, grace_safe_ok, game_over_ok]
 		)
 		quit(1)
 
