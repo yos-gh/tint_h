@@ -61,10 +61,12 @@ func _run() -> void:
 	for stone in game.active_stones:
 		stone.linear_velocity.y = -180.0
 	game._apply_translation_control(0.0, 1.0, 1.0 / 60.0)
-	var supported_bounce_ok: bool = is_zero_approx(game._average_active_velocity().y)
+	var supported_bounce_ok: bool = is_equal_approx(game._average_active_velocity().y, -180.0)
+	game._apply_translation_control(0.0, 0.0, 1.0 / 60.0)
+	var released_bounce_ok: bool = is_equal_approx(game._average_active_velocity().y, -180.0)
 	var direct_control_ok: bool = (
 		move_held_ok and move_release_ok and drop_held_ok and drop_release_ok
-		and supported_drop_ok and supported_bounce_ok
+		and supported_drop_ok and supported_bounce_ok and released_bounce_ok
 	)
 	for stone in game.active_stones.duplicate():
 		game._remove_stone_and_links(stone)

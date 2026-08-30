@@ -560,11 +560,10 @@ func _apply_translation_control(horizontal: float, drop_strength: float, delta: 
 		if supported:
 			# A held soft drop must stop being a drive force once the piece lands.
 			# Otherwise the remembered free-fall velocity keeps growing while the
-			# pile holds the piece still, crushing the pile and storing a large
-			# rebound in the soft-body springs.
+			# pile holds the piece still and keeps crushing the pile. Reset only the
+			# input state: the physics solver's natural rebound must remain intact.
 			soft_drop_natural_velocity = 0.0
-			soft_drop_active = true
-			vertical_correction = -average_velocity.y
+			soft_drop_active = false
 		elif not soft_drop_active:
 			soft_drop_natural_velocity = average_velocity.y
 			soft_drop_active = true
