@@ -35,6 +35,23 @@ func _run() -> void:
 			stone.global_position.y + game.STONE_SIZE * 0.5 <= game.FIELD_TOP
 		))
 	)
+	for stone in game.active_stones:
+		stone.linear_velocity = Vector2(70.0, 80.0)
+	game._apply_translation_control(1.0, 0.0, 0.0)
+	var move_held_ok: bool = is_equal_approx(
+		game._average_active_velocity().x, game.HORIZONTAL_MOVE_SPEED
+	)
+	game._apply_translation_control(0.0, 0.0, 0.0)
+	var move_release_ok: bool = is_zero_approx(game._average_active_velocity().x)
+	game._apply_translation_control(0.0, 1.0, 0.0)
+	var drop_held_ok: bool = is_equal_approx(
+		game._average_active_velocity().y, 80.0 + game.SOFT_DROP_EXTRA_SPEED
+	)
+	game._apply_translation_control(0.0, 0.0, 0.0)
+	var drop_release_ok: bool = is_equal_approx(game._average_active_velocity().y, 80.0)
+	var direct_control_ok: bool = (
+		move_held_ok and move_release_ok and drop_held_ok and drop_release_ok
+	)
 	for stone in game.active_stones.duplicate():
 		game._remove_stone_and_links(stone)
 	game.shape_groups.clear()
@@ -67,6 +84,10 @@ func _run() -> void:
 	deadline_stone.position.x = game.LEFT_DEADLINE_X + game.STONE_SIZE * 0.5
 	var left_boundary_ok: bool = game._left_deadline_exceeded() and game._stones_exceed_deadline()
 	game._update_game_over_state(2.0)
+	var deadline_glow_ok: bool = (
+		game._deadline_glow_alpha(true) > 0.0
+		and is_zero_approx(game._deadline_glow_alpha(false))
+	)
 	deadline_stone.position.x = game.FIELD_CENTER_X
 	game._update_game_over_state(0.1)
 	var grace_reset_ok: bool = not game.is_game_over and game.game_over_exposure == 0.0
@@ -76,13 +97,13 @@ func _run() -> void:
 	game._update_game_over_state(0.2)
 	var game_over_ok: bool = game.is_game_over
 
-	if centered_ok and field_height_ok and clear_height_ok and bowl_ok and tolerance_ok and gravity_ok and spawn_ok and columns_ok and score_ok and combo_expiry_ok and left_boundary_ok and right_boundary_ok and grace_reset_ok and grace_safe_ok and game_over_ok:
-		print("PASS: deeper bowl, 20% lower clear line, centered spawn, deadlines, and grace work")
+	if centered_ok and field_height_ok and clear_height_ok and bowl_ok and tolerance_ok and gravity_ok and spawn_ok and direct_control_ok and columns_ok and score_ok and combo_expiry_ok and left_boundary_ok and right_boundary_ok and deadline_glow_ok and grace_reset_ok and grace_safe_ok and game_over_ok:
+		print("PASS: direct movement, soft-drop release, deadline glow, clears, and grace work")
 		quit(0)
 	else:
 		push_error(
-			"FAIL: centered=%s height=%s clear_height=%s bowl=%s tolerance=%s gravity=%s spawn=%s columns=%s score=%s combo=%s left=%s right=%s reset=%s safe=%s game_over=%s"
-			% [centered_ok, field_height_ok, clear_height_ok, bowl_ok, tolerance_ok, gravity_ok, spawn_ok, columns_ok, score_ok, combo_expiry_ok, left_boundary_ok, right_boundary_ok, grace_reset_ok, grace_safe_ok, game_over_ok]
+			"FAIL: centered=%s height=%s clear_height=%s bowl=%s tolerance=%s gravity=%s spawn=%s direct_control=%s columns=%s score=%s combo=%s left=%s right=%s glow=%s reset=%s safe=%s game_over=%s"
+			% [centered_ok, field_height_ok, clear_height_ok, bowl_ok, tolerance_ok, gravity_ok, spawn_ok, direct_control_ok, columns_ok, score_ok, combo_expiry_ok, left_boundary_ok, right_boundary_ok, deadline_glow_ok, grace_reset_ok, grace_safe_ok, game_over_ok]
 		)
 		quit(1)
 

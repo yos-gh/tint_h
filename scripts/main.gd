@@ -23,8 +23,8 @@ const SPAWN_POS := Vector2(FIELD_CENTER_X, 80.0)
 const PAIR_HEIGHT_TOLERANCE := STONE_SIZE * 0.55
 const CLEAR_BAND_HALF_WIDTH := STONE_SIZE * 0.55
 
-const MOVE_FORCE := 2750.0
-const SOFT_DROP_FORCE := 2800.0
+const HORIZONTAL_MOVE_SPEED := 240.0
+const SOFT_DROP_EXTRA_SPEED := 300.0
 const TARGET_ROTATION_SPEED := TAU # One full turn per second.
 const GAMEPAD_DEADZONE := 0.28
 const INPUT_MOVE_LEFT := "gamepad_move_left"
@@ -91,6 +91,8 @@ var elimination_cooldown := 0.0
 var near_clear_cooldown := 0.0
 var combo_count := 0
 var combo_time_remaining := 0.0
+var soft_drop_active := false
+var soft_drop_natural_velocity := 0.0
 var flash_lines: Array[Dictionary] = []
 
 var score_label: Label
@@ -456,6 +458,7 @@ func _physics_process(delta: float) -> void:
 
 func _control_active_piece(delta: float) -> void:
 	if active_stones.is_empty():
+		_reset_translation_control()
 		return
 	var horizontal := Input.get_axis(INPUT_MOVE_LEFT, INPUT_MOVE_RIGHT)
 	if is_instance_valid(touch_stick):
@@ -516,10 +519,7 @@ func _control_active_piece(delta: float) -> void:
 			group["target_angular_velocity"] = 0.0
 		break
 
-	for stone in active_stones:
-		if not is_instance_valid(stone):
-			continue
-		stone.apply_central_force(Vector2(horizontal * MOVE_FORCE, SOFT_DROP_FORCE * drop_strength))
+	_apply_translation_control(horizontal, drop_strength, delta)
 
 	# Rotation must not become translational lift. Remove only the shared upward
 	# velocity of the piece; relative velocities that form the rotation remain.
@@ -535,6 +535,58 @@ func _control_active_piece(delta: float) -> void:
 			for stone in active_stones:
 				if is_instance_valid(stone):
 					stone.linear_velocity.y -= average_vertical_velocity
+
+
+func _apply_translation_control(horizontal: float, drop_strength: float, delta: float) -> void:
+	var valid_stones: Array[Node] = active_stones.filter(
+		func(stone): return is_instance_valid(stone) and not stone.is_queued_for_deletion()
+	)
+	if valid_stones.is_empty():
+		_reset_translation_control()
+		return
+
+	# Control the piece's center-of-mass velocity, preserving the relative
+	# velocities used by rotation and soft-body deformation.
+	var average_velocity := Vector2.ZERO
+	for stone in valid_stones:
+		average_velocity += stone.linear_velocity
+	average_velocity /= float(valid_stones.size())
+
+	var target_horizontal_velocity := horizontal * HORIZONTAL_MOVE_SPEED
+	var horizontal_correction := target_horizontal_velocity - average_velocity.x
+	var vertical_correction := 0.0
+	if drop_strength > 0.0:
+		if not soft_drop_active:
+			soft_drop_natural_velocity = average_velocity.y
+			soft_drop_active = true
+		else:
+			var gravity := float(ProjectSettings.get_setting("physics/2d/default_gravity"))
+			soft_drop_natural_velocity += gravity * delta
+		var target_vertical_velocity := (
+			soft_drop_natural_velocity + SOFT_DROP_EXTRA_SPEED * drop_strength
+		)
+		vertical_correction = target_vertical_velocity - average_velocity.y
+	elif soft_drop_active:
+		vertical_correction = soft_drop_natural_velocity - average_velocity.y
+		soft_drop_active = false
+
+	for stone in valid_stones:
+		stone.linear_velocity += Vector2(horizontal_correction, vertical_correction)
+
+
+func _average_active_velocity() -> Vector2:
+	var valid_stones: Array[Node] = active_stones.filter(
+		func(stone): return is_instance_valid(stone) and not stone.is_queued_for_deletion()
+	)
+	var average_velocity := Vector2.ZERO
+	for stone in valid_stones:
+		average_velocity += stone.linear_velocity
+	return average_velocity / maxf(float(valid_stones.size()), 1.0)
+
+
+func _reset_translation_control() -> void:
+	soft_drop_active = false
+	soft_drop_natural_velocity = 0.0
 
 
 func _shape_error(group: Dictionary) -> float:
@@ -597,6 +649,7 @@ func _update_active_piece(delta: float) -> void:
 	if settle_age >= LOCK_DELAY:
 		active_group_id = -1
 		active_stones.clear()
+		_reset_translation_control()
 		settle_age = 0.0
 		_check_for_elimination()
 		if not is_game_over:
@@ -606,6 +659,7 @@ func _update_active_piece(delta: float) -> void:
 func _spawn_piece(shape_override: String = "") -> void:
 	if is_game_over:
 		return
+	_reset_translation_control()
 	group_counter += 1
 	active_group_id = group_counter
 	active_age = 0.0
@@ -1008,8 +1062,8 @@ func _draw() -> void:
 	draw_polyline(clear_points, Color(0.35, 0.85, 0.75, 0.30), 2.0, true)
 
 	# The warning strips and checks share the exact same coordinates.
-	_draw_deadline(LEFT_DEADLINE_X)
-	_draw_deadline(RIGHT_DEADLINE_X)
+	_draw_deadline(LEFT_DEADLINE_X, _left_deadline_exceeded(), true)
+	_draw_deadline(RIGHT_DEADLINE_X, _right_deadline_exceeded(), false)
 
 	draw_line(Vector2(FIELD_LEFT, FIELD_TOP), Vector2(FIELD_LEFT, BOWL_EDGE_Y), Color("52658e"), 6.0, true)
 	draw_line(Vector2(FIELD_RIGHT, FIELD_TOP), Vector2(FIELD_RIGHT, BOWL_EDGE_Y), Color("52658e"), 6.0, true)
@@ -1021,16 +1075,35 @@ func _draw() -> void:
 		draw_line(flash["from"], flash["to"], Color(1.0, 0.95, 0.65, alpha), 18.0 * alpha, true)
 
 
-func _draw_deadline(line_x: float) -> void:
+func _deadline_glow_alpha(exceeded: bool) -> float:
+	if not exceeded:
+		return 0.0
+	var pulse := 0.5 + sin(game_over_exposure * 8.0) * 0.5
+	return 0.10 + pulse * 0.16
+
+
+func _draw_deadline(line_x: float, exceeded: bool, is_left: bool) -> void:
 	var bottom_y := _bowl_y(line_x)
+	var glow_alpha := _deadline_glow_alpha(exceeded)
+	if glow_alpha > 0.0:
+		var zone_left := FIELD_LEFT if is_left else line_x
+		var zone_right := line_x if is_left else FIELD_RIGHT
+		var glow_polygon := PackedVector2Array([
+			Vector2(zone_left, FIELD_TOP),
+			Vector2(zone_right, FIELD_TOP),
+		])
+		for index in range(12, -1, -1):
+			var x := lerpf(zone_left, zone_right, float(index) / 12.0)
+			glow_polygon.append(Vector2(x, _bowl_y(x)))
+		draw_colored_polygon(glow_polygon, Color(1.0, 0.10, 0.16, glow_alpha))
 	draw_rect(
 		Rect2(line_x - 5.0, FIELD_TOP, 10.0, bottom_y - FIELD_TOP),
-		Color(1.0, 0.36, 0.45, 0.07)
+		Color(1.0, 0.36, 0.45, 0.07 + glow_alpha * 0.32)
 	)
 	draw_dashed_line(
 		Vector2(line_x, FIELD_TOP),
 		Vector2(line_x, bottom_y),
-		Color(1.0, 0.48, 0.55, 0.52),
+		Color(1.0, 0.48, 0.55, 0.52 + glow_alpha),
 		2.0,
 		10.0
 	)
