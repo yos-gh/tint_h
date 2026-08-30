@@ -49,8 +49,22 @@ func _run() -> void:
 	)
 	game._apply_translation_control(0.0, 0.0, 0.0)
 	var drop_release_ok: bool = is_equal_approx(game._average_active_velocity().y, 80.0)
+	for stone in game.active_stones:
+		stone.is_supported = true
+		stone.linear_velocity.y = 0.0
+	for _iteration in range(120):
+		game._apply_translation_control(0.0, 1.0, 1.0 / 60.0)
+	var supported_drop_ok: bool = (
+		is_zero_approx(game._average_active_velocity().y)
+		and is_zero_approx(game.soft_drop_natural_velocity)
+	)
+	for stone in game.active_stones:
+		stone.linear_velocity.y = -180.0
+	game._apply_translation_control(0.0, 1.0, 1.0 / 60.0)
+	var supported_bounce_ok: bool = is_zero_approx(game._average_active_velocity().y)
 	var direct_control_ok: bool = (
 		move_held_ok and move_release_ok and drop_held_ok and drop_release_ok
+		and supported_drop_ok and supported_bounce_ok
 	)
 	for stone in game.active_stones.duplicate():
 		game._remove_stone_and_links(stone)

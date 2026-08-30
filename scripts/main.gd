@@ -556,16 +556,31 @@ func _apply_translation_control(horizontal: float, drop_strength: float, delta: 
 	var horizontal_correction := target_horizontal_velocity - average_velocity.x
 	var vertical_correction := 0.0
 	if drop_strength > 0.0:
-		if not soft_drop_active:
+		var supported: bool = valid_stones.any(func(stone): return stone.is_supported)
+		if supported:
+			# A held soft drop must stop being a drive force once the piece lands.
+			# Otherwise the remembered free-fall velocity keeps growing while the
+			# pile holds the piece still, crushing the pile and storing a large
+			# rebound in the soft-body springs.
+			soft_drop_natural_velocity = 0.0
+			soft_drop_active = true
+			vertical_correction = -average_velocity.y
+		elif not soft_drop_active:
 			soft_drop_natural_velocity = average_velocity.y
 			soft_drop_active = true
 		else:
 			var gravity := float(ProjectSettings.get_setting("physics/2d/default_gravity"))
-			soft_drop_natural_velocity += gravity * delta
-		var target_vertical_velocity := (
-			soft_drop_natural_velocity + SOFT_DROP_EXTRA_SPEED * drop_strength
-		)
-		vertical_correction = target_vertical_velocity - average_velocity.y
+			# Collisions may slow the piece before the support flag becomes visible
+			# here. Never let the hidden natural-velocity baseline outrun the
+			# velocity the physics solver actually produced.
+			soft_drop_natural_velocity = minf(
+				soft_drop_natural_velocity + gravity * delta, average_velocity.y
+			)
+		if not supported:
+			var target_vertical_velocity := (
+				soft_drop_natural_velocity + SOFT_DROP_EXTRA_SPEED * drop_strength
+			)
+			vertical_correction = target_vertical_velocity - average_velocity.y
 	elif soft_drop_active:
 		vertical_correction = soft_drop_natural_velocity - average_velocity.y
 		soft_drop_active = false
