@@ -13,3 +13,9 @@
 *.png binary
 *.pck binary
 *.wasm binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.exe binary
+*.aar binary
+*.pdb binary

@@ -35,3 +35,9 @@ window/stretch/mode="canvas_items"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.035, 0.047, 0.075, 1)
+
+[sentry]
+
+options/attach_log=false
+options/dsn="https://e74a56f51365b5079f682c954174530b@o4511784787771392.ingest.us.sentry.io/4511999050448901"
+schema_version=4

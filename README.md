@@ -39,3 +39,7 @@ Godot_console.exe --headless --path . --export-release Web web/game/index.html
 ```
 
 The prototype reuses the soft-block physics, curved bowl, controls, and touchscreen interface from the original [TINT](https://github.com/yos-gh/tint).
+
+## Error monitoring
+
+The browser build includes the official Sentry SDK for Godot. Runtime errors and crashes are reported to Sentry using the public DSN configured in `project.godot`.
