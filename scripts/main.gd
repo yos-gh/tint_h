@@ -57,7 +57,7 @@ const MAX_ROTATION_TARGET_LEAD := 0.10
 const LOCK_DELAY := 0.3
 const GAME_OVER_GRACE_PERIOD := 5.0
 const NEAR_CLEAR_SCAN_INTERVAL := 0.12
-const COMBO_WINDOW := 1.0
+const COMBO_WINDOW := 3.0
 
 const SHAPES := {
 	"I": [Vector2(-1.5, 0), Vector2(-0.5, 0), Vector2(0.5, 0), Vector2(1.5, 0)],
