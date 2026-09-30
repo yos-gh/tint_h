@@ -9,12 +9,13 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0b1017;
-  --surface: #121a24;
-  --line: #243242;
-  --frame: #33465a;
-  --text: #edf2f7;
-  --muted: #9aa8b8;
+  /* Radix Colors Gray (dark): gray1, gray2, gray4, gray6, gray12, gray11 */
+  --bg: #111111;
+  --surface: #191919;
+  --line: #2a2a2a;
+  --frame: #3a3a3a;
+  --text: #eeeeee;
+  --muted: #b4b4b4;
   --accent: #6fd6c6;
   --game-ratio: 16 / 9;
   --game-width: 1120px;
@@ -31,9 +32,7 @@ html { background: var(--bg); }
 body {
   margin: 0;
   color: var(--text);
-  background:
-    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--accent) 9%, transparent) 0, transparent 38rem),
-    var(--bg);
+  background: var(--bg);
   font-family: var(--font);
   line-height: 1.65;
 }
