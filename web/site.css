@@ -1,0 +1,169 @@
+/*
+  Shared skin for yos-gh game pages.
+  Keep this file identical in every game repository (web/site.css).
+  Each page sets only its own values in index.html:
+    --accent       signature color of the game
+    --game-ratio   aspect ratio of the game canvas, e.g. 16 / 9
+    --game-width   maximum width of the game frame
+*/
+
+:root {
+  color-scheme: dark;
+  --bg: #0b1017;
+  --surface: #121a24;
+  --line: #243242;
+  --frame: #33465a;
+  --text: #edf2f7;
+  --muted: #9aa8b8;
+  --accent: #6fd6c6;
+  --game-ratio: 16 / 9;
+  --game-width: 1120px;
+  --page-width: 1120px;
+  --content-width: 920px;
+  --font: Inter, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Helvetica, Arial, sans-serif;
+  --mono: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--accent) 9%, transparent) 0, transparent 38rem),
+    var(--bg);
+  font-family: var(--font);
+  line-height: 1.65;
+}
+
+a { color: var(--accent); text-underline-offset: .2em; }
+a:hover { color: var(--text); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.skip { position: absolute; top: -100px; left: 8px; z-index: 2; padding: 8px 12px; background: var(--surface); }
+.skip:focus { top: 8px; }
+
+/* Top bar: title, tagline and links */
+.topbar {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 10px max(20px, calc((100vw - var(--page-width)) / 2));
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.brand { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.brand h1 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap; }
+.brand p { margin: 0; color: var(--muted); font-size: .78rem; letter-spacing: .06em; }
+
+.topbar nav { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: .82rem; white-space: nowrap; }
+
+/* Game frame */
+.game-wrap { width: min(calc(100% - 32px), var(--game-width)); margin: 0 auto; padding: 22px 0 28px; }
+
+.game-shell {
+  width: 100%;
+  aspect-ratio: var(--game-ratio);
+  overflow: hidden;
+  border: 1px solid var(--frame);
+  border-radius: 12px;
+  background: #05080c;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 44%);
+}
+
+.game-shell iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+.game-note {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+.game-note p { margin: 0; }
+
+/* Guide */
+main { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 45%, transparent); }
+
+.content { width: min(calc(100% - 40px), var(--content-width)); margin: 0 auto; padding: 42px 0 56px; }
+
+.intro { max-width: 720px; margin: 0 0 34px; font-size: 1rem; }
+
+.columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 44px; }
+
+section { padding: 22px 0; border-top: 1px solid var(--line); }
+
+section h2 {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+section h3 { margin: 18px 0 6px; font-size: .9rem; font-weight: 650; }
+section h2 + h3 { margin-top: 0; }
+
+section p, section ul, section dl { margin: 0; color: var(--muted); font-size: .9rem; }
+section p + p { margin-top: 10px; }
+section ul { padding-left: 1.2rem; }
+section li + li { margin-top: 4px; }
+
+/* Controls: one row per action */
+.controls div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.controls div:first-child { border-top: 1px solid var(--line); }
+.controls dt { color: var(--muted); }
+.controls dd { margin: 0; color: var(--text); text-align: right; }
+
+kbd, code {
+  font-family: var(--mono);
+  font-size: .8rem;
+  color: var(--text);
+}
+kbd {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--frame);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  line-height: 1.5;
+}
+
+/* Footer */
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 22px max(20px, calc((100vw - var(--page-width)) / 2)) 30px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .78rem;
+}
+footer nav { display: flex; gap: 18px; }
+
+@media (max-width: 720px) {
+  .topbar { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .brand p { display: none; }
+  .game-wrap { width: 100%; padding-top: 0; }
+  .game-shell { border-left: 0; border-right: 0; border-radius: 0; }
+  .game-note { padding: 0 16px; }
+  .columns { grid-template-columns: 1fr; }
+}
